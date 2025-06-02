@@ -15,9 +15,8 @@ Example result: `1`
 ## Add
 Using add; allows you to add two numbers.
 
-Example usage: `let x = 1;
-let y = 2;
-add x y;
+Example usage: `
+add 1 2;
 print result;`
 
 Example result: `3`
