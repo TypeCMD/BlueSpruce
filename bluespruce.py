@@ -1,9 +1,3 @@
-def add(n1, n2, variables):
-    # Resolve variables if needed
-    n1 = int(variables.get(n1, n1))
-    n2 = int(variables.get(n2, n2))
-    return n1 + n2
-
 def extract_command(text: str, start_str: str, stop_char: str = ';') -> str | None:
     try:
         start_index = text.index(start_str) + len(start_str)
@@ -12,42 +6,50 @@ def extract_command(text: str, start_str: str, stop_char: str = ';') -> str | No
     end_index = text.find(stop_char, start_index)
     return text[start_index:] if end_index == -1 else text[start_index:end_index]
 
-variables = {}
-result = None
+def evaluate_expression(expr: str, variables: dict):
+    """
+    Replaces variable names with their values and evaluates the expression safely.
+    """
+    # Replace variables with their values
+    tokens = expr.split()
+    replaced = []
+    for token in tokens:
+        if token in variables:
+            replaced.append(variables[token])
+        else:
+            replaced.append(token)
+    safe_expr = " ".join(replaced)
+    
+    # Only allow safe characters
+    allowed = "0123456789+-*/(). "
+    if any(c not in allowed for c in safe_expr):
+        raise ValueError("Invalid characters in expression.")
+    
+    return eval(safe_expr)
 
-filename = f"/{input("BlueSpruce File Path: ")}"
+variables = {}
+
+filename = input("BlueSpruce File Path: ")
 if '.bluespruce' in filename:
     with open(filename) as f:
         for line in f:
             line = line.strip()
 
-            # Handle variables: let x = 10;
+            # Variable assignment
             if line.startswith('let '):
-                try:
-                    declaration = extract_command(line, 'let ', ';')
+                declaration = extract_command(line, 'let ', ';')
+                if declaration and '=' in declaration:
                     var_name, value = declaration.split('=')
                     variables[var_name.strip()] = value.strip()
-                except:
-                    print("Invalid variable declaration.")
 
-            # Handle addition: add x y;
-            elif line.startswith('add '):
-                text = extract_command(line, 'add ', ';')
-                if text:
-                    parts = text.strip().split()
-                    if len(parts) == 2:
-                        result = add(parts[0], parts[1], variables)
-                    else:
-                        print("Error: add requires two arguments.")
-
-            # Handle printing
+            # Print expression or variable
             elif line.startswith('print '):
-                text = extract_command(line, 'print ', ';')
-                if text.strip() == "result":
-                    print(result)
-                elif text.strip() in variables:
-                    print(variables[text.strip()])
-                else:
-                    print(text)
+                expr = extract_command(line, 'print ', ';')
+                if expr:
+                    try:
+                        result = evaluate_expression(expr.strip(), variables)
+                        print(result)
+                    except Exception as e:
+                        print(f"Error evaluating expression '{expr.strip()}':", e)
 else:
     print('Wrong filetype.')
